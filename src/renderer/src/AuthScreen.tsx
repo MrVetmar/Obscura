@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lock, Unlock, ShieldAlert } from 'lucide-react'
 
 interface Props {
@@ -12,8 +12,24 @@ export default function AuthScreen({ initialized, onUnlock }: Props) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const [lockoutTimer, setLockoutTimer] = useState<number | null>(null)
+
+  // Handle countdown
+  useEffect(() => {
+    if (lockoutTimer !== null && lockoutTimer > 0) {
+      const interval = setInterval(() => {
+        setLockoutTimer(prev => prev !== null ? prev - 1 : null)
+      }, 1000)
+      return () => clearInterval(interval)
+    } else if (lockoutTimer === 0) {
+      setLockoutTimer(null)
+      setError('')
+    }
+  }, [lockoutTimer])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (lockoutTimer) return
     setError('')
     
     if (!password) {
@@ -40,7 +56,10 @@ export default function AuthScreen({ initialized, onUnlock }: Props) {
         if (res.success) {
           onUnlock()
         } else {
-          setError('Hatalı şifre veya bozuk veritabanı')
+          setError(res.error || 'Hatalı şifre veya bozuk veritabanı')
+          if (res.lockoutRemaining) {
+            setLockoutTimer(res.lockoutRemaining)
+          }
         }
       }
     } catch (err: any) {
@@ -115,10 +134,16 @@ export default function AuthScreen({ initialized, onUnlock }: Props) {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || lockoutTimer !== null}
             className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 transition-colors"
           >
-            {loading ? 'İşleniyor...' : initialized ? 'Kilidi Aç' : 'Şifreyi Belirle ve Başla'}
+            {lockoutTimer !== null 
+              ? `Çok Fazla Deneme (${lockoutTimer} sn)` 
+              : loading 
+                ? 'İşleniyor...' 
+                : initialized 
+                  ? 'Kilidi Aç' 
+                  : 'Şifreyi Belirle ve Başla'}
           </button>
         </form>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Search, Plus, Image as ImageIcon, Settings, FolderClosed, LogOut, Heart, X, Tag as TagIcon, Trash2, Download, Archive, RefreshCw, Play, Maximize2, Zap, Users } from 'lucide-react'
+import { Search, Plus, Image as ImageIcon, Settings, FolderClosed, LogOut, Heart, X, Tag as TagIcon, Trash2, Download, Archive, RefreshCw, Play, Maximize2, Zap, Users, Shield } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import Lightbox from './components/Lightbox'
@@ -63,6 +63,8 @@ export default function Dashboard() {
   const [showTrash, setShowTrash] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  const [showSecurityLogs, setShowSecurityLogs] = useState(false)
+  const [securityLogs, setSecurityLogs] = useState<any[]>([])
   const [isBackingUp, setIsBackingUp] = useState(false)
   
   // People State
@@ -83,9 +85,29 @@ export default function Dashboard() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'downloading' | 'downloaded'>('idle')
   const [updateProgress, setUpdateProgress] = useState<number>(0)
   const [appVersion, setAppVersion] = useState<string>('')
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false)
+
+  const RELEASE_NOTES: Record<string, string[]> = {
+    '1.0.1': [
+      'Güvenlik günlüğü eklendi: Başarılı ve başarısız giriş denemeleri kaydediliyor.',
+      'Brute-force koruması: Çok fazla hatalı şifre denemesinde uygulama 1 dakika kilitlenir.',
+      'Yenilikler ekranı: Uygulama güncellendiğinde bu ekran otomatik açılır.'
+    ]
+  }
 
   useEffect(() => {
-    window.api.getAppVersion().then(v => setAppVersion(v))
+    window.api.getAppVersion().then(v => {
+      setAppVersion(v)
+      
+      const lastVersion = localStorage.getItem('obscura_version')
+      if (lastVersion && lastVersion !== v && RELEASE_NOTES[v]) {
+        // App was updated, show release notes
+        setShowReleaseNotes(true)
+      }
+      
+      // Save current version
+      localStorage.setItem('obscura_version', v)
+    })
     
     window.api.onUpdateAvailable(() => {
       setUpdateStatus('downloading')
@@ -1134,6 +1156,29 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Security Log */}
+                  <div className="flex items-start gap-4 border-t border-gray-800 pt-6">
+                    <div className="p-2 bg-red-900/30 text-red-400 rounded-lg shrink-0">
+                      <Shield size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-200 mb-1">Güvenlik Günlüğü</h4>
+                      <p className="text-sm text-gray-400 mb-4">
+                        Başarılı ve başarısız tüm giriş denemelerini ile kilitlenme kayıtlarını görüntüleyin.
+                      </p>
+                      <button 
+                        onClick={async () => {
+                          const logs = await window.api.getSecurityLogs()
+                          setSecurityLogs(logs.reverse()) // newest first
+                          setShowSecurityLogs(true)
+                          setShowSettings(false)
+                        }}
+                        className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                      >
+                        Kayıtları Gör
+                      </button>
+                    </div>
+                  </div>
                   {/* Auto Updater */}
                   <div className="flex items-start gap-4 border-t border-gray-800 pt-6">
                     <div className="p-2 bg-green-900/30 text-green-400 rounded-lg shrink-0">
@@ -1165,6 +1210,89 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* Release Notes Modal */}
+      {showReleaseNotes && RELEASE_NOTES[appVersion] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-8 pb-6 flex flex-col items-center text-center border-b border-gray-800 shrink-0">
+              <div className="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                <Zap size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Yenilikler</h2>
+              <p className="text-sm text-gray-400">Sürüm {appVersion}</p>
+            </div>
+            <div className="p-6 overflow-y-auto bg-gray-900/50">
+              <ul className="space-y-4">
+                {RELEASE_NOTES[appVersion].map((note, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0"></div>
+                    <p className="text-gray-300 text-sm leading-relaxed">{note}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-6 border-t border-gray-800 bg-gray-950 shrink-0">
+              <button 
+                onClick={() => setShowReleaseNotes(false)}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors"
+              >
+                Harika, Devam Et
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Security Logs Modal */}
+      {showSecurityLogs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center p-6 border-b border-gray-800 shrink-0">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <Shield size={20} className="text-red-400" />
+                Güvenlik Günlüğü
+              </h2>
+              <button 
+                onClick={() => setShowSecurityLogs(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4">
+              {securityLogs.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Henüz kayıt yok.</div>
+              ) : (
+                securityLogs.map((log, i) => (
+                  <div key={i} className="flex items-start gap-3 border-b border-gray-800/50 pb-4 last:border-0 last:pb-0">
+                    <div className="mt-1">
+                      {log.type === 'LOGIN_SUCCESS' && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
+                      {log.type === 'LOGIN_FAILED' && <div className="w-2 h-2 rounded-full bg-yellow-500"></div>}
+                      {log.type === 'LOCKOUT' && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`font-medium text-sm ${
+                          log.type === 'LOGIN_SUCCESS' ? 'text-green-400' :
+                          log.type === 'LOGIN_FAILED' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {log.type === 'LOGIN_SUCCESS' ? 'Başarılı Giriş' :
+                           log.type === 'LOGIN_FAILED' ? 'Başarısız Deneme' : 'Kilitlenme'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      {log.details && <p className="text-sm text-gray-400">{log.details}</p>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bulk Tag Modal */}
       {showBulkTagModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

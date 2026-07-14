@@ -8,6 +8,7 @@ const api = {
   unlock: (password: string) => ipcRenderer.invoke('unlock', password),
   lock: () => ipcRenderer.invoke('lock'),
   checkLocked: () => ipcRenderer.invoke('check-locked'),
+  getSecurityLogs: () => ipcRenderer.invoke('get-security-logs'),
   importPhotos: (filePaths?: string[]) => ipcRenderer.invoke('import-photos', filePaths),
   getPhotos: (filters?: { query?: string, albumId?: string }) => ipcRenderer.invoke('get-photos', filters),
   createAlbum: (name: string) => ipcRenderer.invoke('create-album', name),

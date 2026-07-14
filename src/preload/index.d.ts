@@ -3,9 +3,10 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 export interface IApi {
   checkInitialized: () => Promise<boolean>
   setupPassword: (password: string) => Promise<{ success: boolean, error?: string }>
-  unlock: (password: string) => Promise<{ success: boolean, error?: string }>
+  unlock: (password: string) => Promise<{ success: boolean, error?: string, lockoutRemaining?: number }>
   lock: () => Promise<boolean>
   checkLocked: () => Promise<boolean>
+  getSecurityLogs: () => Promise<any[]>
   importPhotos: (filePaths?: string[]) => Promise<{ imported: number, duplicates: number }>
   getPhotos: (filters?: { query?: string, albumId?: string }) => Promise<any[]>
   createAlbum: (name: string) => Promise<string>

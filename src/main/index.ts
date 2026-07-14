@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { isAppInitialized, setupMasterPassword, unlockApp, lockApp, isLocked, getSessionKey } from './auth'
+import { isAppInitialized, setupMasterPassword, unlockApp, lockApp, isLocked, getSessionKey, getSecurityLogs } from './auth'
 import { getDb } from './db'
 import { CryptoService } from './crypto'
 import fs from 'fs'
@@ -102,13 +102,18 @@ app.whenReady().then(() => {
     }
   })
 
+
   ipcMain.handle('unlock', async (_, password) => {
     try {
-      const success = await unlockApp(password)
-      return { success }
+      const result = await unlockApp(password)
+      return result
     } catch (error: any) {
       return { success: false, error: error.message }
     }
+  })
+
+  ipcMain.handle('get-security-logs', async () => {
+    return await getSecurityLogs()
   })
 
   ipcMain.handle('lock', () => {
