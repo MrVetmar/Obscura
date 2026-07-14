@@ -1,0 +1,25 @@
+appId: com.obscura.app
+productName: Obscura
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+asarUnpack:
+  - "**/*.exe"
+  - "**/*.dll"
+win:
+  target: nsis
+  icon: build/icon.png
+  publisherName: Revrlex Studios
+mac:
+  target: dmg
+linux:
+  target: AppImage
+publish:
+  provider: github
+  owner: MrVetmar
+  repo: obscura
+nsis:
+  oneClick: true
+  perMachine: false
