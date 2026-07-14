@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
-import { X, ChevronLeft, ChevronRight, Scissors, Loader2, Play, Pause } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Scissors, Loader2, Play, Pause, UserMinus } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -12,9 +12,10 @@ interface LightboxProps {
   photos: Photo[]
   initialIndex: number
   onClose: () => void
+  selectedPersonId?: string | null
 }
 
-export default function Lightbox({ photos, initialIndex, onClose }: LightboxProps) {
+export default function Lightbox({ photos, initialIndex, onClose, selectedPersonId }: LightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [duration, setDuration] = useState(0)
@@ -28,13 +29,6 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
   const videoRef = React.useRef<HTMLVideoElement>(null)
 
   const currentMedia = photos[currentIndex]
-
-  // Update video playback rate when it changes
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = playbackRate
-    }
-  }, [playbackRate, currentIndex])
 
   // Update video playback rate when it changes
   useEffect(() => {
@@ -85,6 +79,24 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
     }
   }
 
+  const handleRemoveFace = async () => {
+    if (!currentMedia || !selectedPersonId) return
+    if (window.confirm('Bu fotoğrafın seçili kişiye ait olmadığını onaylıyor musunuz?')) {
+      try {
+        await window.api.removeFaceFromPerson(currentMedia.id, selectedPersonId)
+        alert('Fotoğraf bu kişiden ayrıldı.')
+        // Move to next photo or close if it's the last one
+        if (photos.length > 1) {
+          handleNext()
+        } else {
+          onClose()
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,7 +126,18 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center select-none">
       {/* Top Bar */}
-      <div className="absolute top-0 inset-x-0 p-4 flex justify-end z-10 bg-gradient-to-b from-black/60 to-transparent">
+      <div className="absolute top-0 inset-x-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/60 to-transparent">
+        <div>
+          {selectedPersonId && (
+            <button
+              onClick={handleRemoveFace}
+              className="flex items-center space-x-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
+            >
+              <UserMinus size={16} />
+              <span>Bu Kişi Değil</span>
+            </button>
+          )}
+        </div>
         <button 
           onClick={onClose}
           className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
@@ -273,14 +296,14 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
             key={currentMedia.id}
             initialScale={1}
             minScale={1}
-            maxScale={5}
+            maxScale={3}
             centerOnInit={true}
             limitToBounds={true}
-            wheel={{ step: 0.03, smoothStep: 0.01 }}
-            doubleClick={{ disabled: true }} // We'll handle custom double click
+            wheel={{ step: 0.1 }}
+            doubleClick={{ step: 2.5, mode: 'toggle' }}
             panning={{ velocityDisabled: false }}
           >
-            {({ zoomIn, zoomOut, resetTransform, setTransform, state }) => {
+            {({ zoomIn, zoomOut, resetTransform, state }) => {
               // We can handle keyboard zoom here or listen to global keys
               useEffect(() => {
                 const handleZoomKeys = (e: KeyboardEvent) => {
@@ -298,19 +321,8 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
                     <img 
                       src={mediaSrc} 
                       alt="Enlarged" 
-                      className="w-screen h-screen object-contain drop-shadow-2xl transition-transform duration-200"
+                      className="w-screen h-screen object-contain drop-shadow-2xl"
                       draggable={false}
-                      onDoubleClick={(e) => {
-                        if (state.scale > 1.5) {
-                          resetTransform()
-                        } else {
-                          // Zoom to cursor
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          const x = e.clientX - rect.left
-                          const y = e.clientY - rect.top
-                          setTransform(-x * 1.5, -y * 1.5, 2.5, 300, 'easeOutCubic')
-                        }
-                      }}
                     />
                   </TransformComponent>
                   

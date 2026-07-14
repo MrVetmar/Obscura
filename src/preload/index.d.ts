@@ -29,6 +29,9 @@ export interface IApi {
   getPeople: () => Promise<any[]>
   getPersonPhotos: (personId: string) => Promise<any[]>
   updatePersonName: (personId: string, name: string) => Promise<boolean>
+  mergePeople: (targetPersonId: string, sourcePersonIds: string[]) => Promise<boolean>
+  deletePerson: (personId: string) => Promise<boolean>
+  removeFaceFromPerson: (photoId: string, personId: string) => Promise<boolean>
 
   addTag: (photoId: string, tagName: string) => Promise<boolean>
   removeTag: (photoId: string, tagId: string) => Promise<boolean>

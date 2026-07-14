@@ -101,7 +101,7 @@ export const unlockApp = async (password: string): Promise<{ success: boolean, e
 
   if (securityState.lockoutUntil && securityState.lockoutUntil > now) {
     const remaining = Math.ceil((securityState.lockoutUntil - now) / 1000)
-    return { success: false, error: 'Too many failed attempts.', lockoutRemaining: remaining }
+    return { success: false, error: 'Çok fazla hatalı deneme.', lockoutRemaining: remaining }
   } else if (securityState.lockoutUntil && securityState.lockoutUntil <= now) {
     // Lockout expired, reset failed attempts
     securityState.lockoutUntil = null
@@ -129,11 +129,11 @@ export const unlockApp = async (password: string): Promise<{ success: boolean, e
       securityState.lockoutUntil = now + 60 * 1000 // 1 minute lockout
       securityState.logs.push({ timestamp: now, type: 'LOCKOUT', details: 'Brute-force protection activated (1 min)' })
       await saveSecurityState(securityState)
-      return { success: false, error: 'Too many failed attempts.', lockoutRemaining: 60 }
+      return { success: false, error: 'Çok fazla hatalı deneme.', lockoutRemaining: 60 }
     } else {
       securityState.logs.push({ timestamp: now, type: 'LOGIN_FAILED', details: `Attempt ${securityState.failedAttempts}/5` })
       await saveSecurityState(securityState)
-      return { success: false, error: 'Invalid password' }
+      return { success: false, error: 'Hatalı şifre' }
     }
   }
 

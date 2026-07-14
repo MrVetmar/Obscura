@@ -88,6 +88,13 @@ export default function Dashboard() {
   const [showReleaseNotes, setShowReleaseNotes] = useState(false)
 
   const RELEASE_NOTES: Record<string, string[]> = {
+    '1.0.2': [
+      'Yüz tanıma yapay zekasının doğruluğu artırıldı, hata payı sıfıra yaklaştırıldı.',
+      'Kalitesiz ve çok küçük (40x40px altı) yüzlerin taranması engellendi.',
+      'Profesyonel yüz yönetimi eklendi: Aynı kişiyi birleştirme (Merge) ve hatalı kişiyi silme yeteneği.',
+      'Fotoğraf görüntüleyicisinden yanlış yüzleri kişiden ayırmak için "Bu Kişi Değil" butonu eklendi.',
+      'Fotoğraf görüntüleyicisinde pürüzsüz mouse tekerleği ile zoom/pan ve çift tıkla yakınlaştırma desteği.'
+    ],
     '1.0.1': [
       'Güvenlik günlüğü eklendi: Başarılı ve başarısız giriş denemeleri kaydediliyor.',
       'Brute-force koruması: Çok fazla hatalı şifre denemesinde uygulama 1 dakika kilitlenir.',
@@ -485,6 +492,7 @@ export default function Dashboard() {
           photos={photos} 
           initialIndex={lightboxIndex} 
           onClose={() => setLightboxIndex(null)} 
+          selectedPersonId={selectedPersonId}
         />
       )}
 
@@ -1190,17 +1198,32 @@ export default function Dashboard() {
                         Mevcut Sürüm: v{appVersion || '...'}<br/>
                         Uygulama arka planda otomatik olarak yeni sürümleri denetler ve indirir.
                       </p>
-                      <button 
-                        onClick={() => {
-                          setUpdateStatus('idle')
-                          window.api.checkForUpdates()
-                        }}
-                        disabled={updateStatus === 'downloading'}
-                        className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-                      >
-                        <RefreshCw size={16} className={updateStatus === 'downloading' ? 'animate-spin' : ''} />
-                        Güncellemeleri Kontrol Et
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => {
+                            setUpdateStatus('idle')
+                            window.api.checkForUpdates()
+                          }}
+                          disabled={updateStatus === 'downloading'}
+                          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw size={16} className={updateStatus === 'downloading' ? 'animate-spin' : ''} />
+                          Güncellemeleri Kontrol Et
+                        </button>
+                        
+                        {RELEASE_NOTES[appVersion] && (
+                          <button 
+                            onClick={() => {
+                              setShowSettings(false)
+                              setShowReleaseNotes(true)
+                            }}
+                            className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                          >
+                            <Zap size={16} />
+                            Güncelleme Notları
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -65,12 +65,15 @@ export default function Scanner() {
             img.src = imgUrl
           })
           
-          const detections = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors()
+          const detectOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.8 })
+          const detections = await faceapi.detectAllFaces(img, detectOptions).withFaceLandmarks().withFaceDescriptors()
           
-          const facesData = detections.map(d => ({
-            descriptor: Array.from(d.descriptor),
-            box: { x: d.detection.box.x, y: d.detection.box.y, width: d.detection.box.width, height: d.detection.box.height }
-          }))
+          const facesData = detections
+            .filter(d => d.detection.box.width >= 40 && d.detection.box.height >= 40)
+            .map(d => ({
+              descriptor: Array.from(d.descriptor),
+              box: { x: d.detection.box.x, y: d.detection.box.y, width: d.detection.box.width, height: d.detection.box.height }
+            }))
           
           await window.api.saveFaces(p.id, facesData)
         } catch (photoErr) {

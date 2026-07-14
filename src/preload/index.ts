@@ -32,6 +32,9 @@ const api = {
   getPeople: () => ipcRenderer.invoke('get-people'),
   getPersonPhotos: (personId: string) => ipcRenderer.invoke('get-person-photos', personId),
   updatePersonName: (personId: string, name: string) => ipcRenderer.invoke('update-person-name', personId, name),
+  mergePeople: (targetPersonId: string, sourcePersonIds: string[]) => ipcRenderer.invoke('merge-people', targetPersonId, sourcePersonIds),
+  deletePerson: (personId: string) => ipcRenderer.invoke('delete-person', personId),
+  removeFaceFromPerson: (photoId: string, personId: string) => ipcRenderer.invoke('remove-face-from-person', photoId, personId),
 
   addTag: (photoId: string, tagName: string) => ipcRenderer.invoke('add-tag', photoId, tagName),
   removeTag: (photoId: string, tagId: string) => ipcRenderer.invoke('remove-tag', photoId, tagId),

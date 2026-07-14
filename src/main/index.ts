@@ -755,7 +755,7 @@ app.whenReady().then(() => {
     const allFaces = db.prepare('SELECT id, photoId, personId, embedding FROM faces').all() as any[]
     const people = db.prepare('SELECT id, representativeFaceId FROM people').all() as any[]
     
-    // Very simple clustering algorithm (Euclidean distance < 0.55)
+    // Very simple clustering algorithm (Euclidean distance < 0.45)
     // In a real production app, consider DBSCAN or Chinese Whispers for 128D vectors.
     const euclideanDistance = (a: number[], b: number[]) => {
       return Math.sqrt(a.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0))
@@ -770,22 +770,24 @@ app.whenReady().then(() => {
         
         const desc1 = JSON.parse(face.embedding)
         let matchedPersonId: string | null = null
-        let minDistance = 0.58 // Increased threshold for better matching
+        let minDistance = 0.54 // Threshold for average linkage
         
         // Find closest person
         for (const person of people) {
-          // Compare with all known faces of that person to find the closest match
+          // Compare with all known faces of that person to find the average match
           const personFaces = allFaces.filter(f => f.personId === person.id || f.id === person.representativeFaceId)
           
-          let personMinDist = Infinity
+          if (personFaces.length === 0) continue
+
+          let totalDist = 0
           for (const pf of personFaces) {
             const desc2 = JSON.parse(pf.embedding)
-            const dist = euclideanDistance(desc1, desc2)
-            if (dist < personMinDist) personMinDist = dist
+            totalDist += euclideanDistance(desc1, desc2)
           }
+          const personAvgDist = totalDist / personFaces.length
           
-          if (personMinDist < minDistance) {
-            minDistance = personMinDist
+          if (personAvgDist < minDistance) {
+            minDistance = personAvgDist
             matchedPersonId = person.id
           }
         }
@@ -854,6 +856,35 @@ app.whenReady().then(() => {
     if (isLocked()) throw new Error('App is locked')
     const db = getDb()
     db.prepare('UPDATE people SET name = ? WHERE id = ?').run(name, personId)
+    return true
+  })
+
+  ipcMain.handle('merge-people', (event, targetPersonId: string, sourcePersonIds: string[]) => {
+    if (isLocked()) throw new Error('App is locked')
+    const db = getDb()
+    db.transaction(() => {
+      for (const sourceId of sourcePersonIds) {
+        db.prepare('UPDATE faces SET personId = ? WHERE personId = ?').run(targetPersonId, sourceId)
+        db.prepare('DELETE FROM people WHERE id = ?').run(sourceId)
+      }
+    })()
+    return true
+  })
+
+  ipcMain.handle('delete-person', (event, personId: string) => {
+    if (isLocked()) throw new Error('App is locked')
+    const db = getDb()
+    db.transaction(() => {
+      db.prepare('UPDATE faces SET personId = NULL WHERE personId = ?').run(personId)
+      db.prepare('DELETE FROM people WHERE id = ?').run(personId)
+    })()
+    return true
+  })
+
+  ipcMain.handle('remove-face-from-person', (event, photoId: string, personId: string) => {
+    if (isLocked()) throw new Error('App is locked')
+    const db = getDb()
+    db.prepare('UPDATE faces SET personId = NULL WHERE photoId = ? AND personId = ?').run(photoId, personId)
     return true
   })
 
