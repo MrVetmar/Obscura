@@ -69,7 +69,7 @@ export default function Scanner() {
           const detections = await faceapi.detectAllFaces(img, detectOptions).withFaceLandmarks().withFaceDescriptors()
           
           const facesData = detections
-            .filter(d => d.detection.box.width >= 40 && d.detection.box.height >= 40)
+            .filter(d => d.detection.box.width >= 60 && d.detection.box.height >= 60)
             .map(d => ({
               descriptor: Array.from(d.descriptor),
               box: { x: d.detection.box.x, y: d.detection.box.y, width: d.detection.box.width, height: d.detection.box.height }

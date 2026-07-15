@@ -88,6 +88,12 @@ export default function Dashboard() {
   const [showReleaseNotes, setShowReleaseNotes] = useState(false)
 
   const RELEASE_NOTES: Record<string, string[]> = {
+    '1.0.3': [
+      'Giriş ekranına kalan şifre deneme hakkı göstergesi eklendi.',
+      'Sıfır Hata (Zero Error) Yüz Taraması: Yüz benzerlik eşiği maksimum katılık seviyesine çıkarıldı.',
+      'Gelişmiş Çöp Profil Filtresi: Galeride en az 2 fotoğrafı bulunmayan kişiler artık Kişiler listesinde kirlilik yaratmayacak.',
+      'Küçük ve uzak yüzlerin algılanma eşiği 60x60 piksele yükseltildi.'
+    ],
     '1.0.2': [
       'Yüz tanıma yapay zekasının doğruluğu artırıldı, hata payı sıfıra yaklaştırıldı.',
       'Kalitesiz ve çok küçük (40x40px altı) yüzlerin taranması engellendi.',

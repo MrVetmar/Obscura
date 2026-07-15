@@ -770,8 +770,8 @@ app.whenReady().then(() => {
         
         const desc1 = JSON.parse(face.embedding)
         let matchedPersonId: string | null = null
-        let minDistance = 0.54 // Threshold for average linkage
-        
+        let minDistance = 0.45 // Very strict threshold for zero error
+
         // Find closest person
         for (const person of people) {
           // Compare with all known faces of that person to find the average match
@@ -817,12 +817,13 @@ app.whenReady().then(() => {
   ipcMain.handle('get-people', () => {
     if (isLocked()) throw new Error('App is locked')
     const db = getDb()
-    // Return all people with their representative face photo path and bounding box
+    // Sadece galeride en az 2 fotoğrafı/yüzü bulunan (gerçekten tanınmış) kişileri döndür
     const query = `
       SELECT p.id, p.name, p.representativeFaceId, f.photoId, f.boundingBox, ph.path as photoPath
       FROM people p
       JOIN faces f ON p.representativeFaceId = f.id
       JOIN photos ph ON f.photoId = ph.id
+      WHERE (SELECT COUNT(*) FROM faces WHERE personId = p.id) > 1
       ORDER BY p.name ASC
     `
     return db.prepare(query).all()

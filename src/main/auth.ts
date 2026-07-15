@@ -91,7 +91,7 @@ export const setupMasterPassword = async (password: string): Promise<void> => {
   sessionKey = key
 }
 
-export const unlockApp = async (password: string): Promise<{ success: boolean, error?: string, lockoutRemaining?: number }> => {
+export const unlockApp = async (password: string): Promise<{ success: boolean, error?: string, lockoutRemaining?: number, remainingAttempts?: number }> => {
   if (!isAppInitialized()) {
     throw new Error('App is not initialized')
   }
@@ -133,7 +133,8 @@ export const unlockApp = async (password: string): Promise<{ success: boolean, e
     } else {
       securityState.logs.push({ timestamp: now, type: 'LOGIN_FAILED', details: `Attempt ${securityState.failedAttempts}/5` })
       await saveSecurityState(securityState)
-      return { success: false, error: 'Hatalı şifre' }
+      const remainingAttempts = 5 - securityState.failedAttempts
+      return { success: false, error: 'Hatalı şifre', remainingAttempts }
     }
   }
 

@@ -56,7 +56,11 @@ export default function AuthScreen({ initialized, onUnlock }: Props) {
         if (res.success) {
           onUnlock()
         } else {
-          setError(res.error || 'Hatalı şifre veya bozuk veritabanı')
+          let errorMsg = res.error || 'Hatalı şifre veya bozuk veritabanı'
+          if (res.remainingAttempts !== undefined) {
+            errorMsg += ` (Kalan hakkınız: ${res.remainingAttempts})`
+          }
+          setError(errorMsg)
           if (res.lockoutRemaining) {
             setLockoutTimer(res.lockoutRemaining)
           }
